@@ -1,0 +1,149 @@
+<?xml version="1.0"?>
+<ruleset name="" namespace="">
+    <description>Coding standard for this PHP project</description>
+
+    <php_version>7.4</php_version>
+
+    <!-- Generic excludes. -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/tests/reports/*</exclude-pattern>
+
+    <autoload>./vendor/autoload.php</autoload>
+
+    <config name="installed_paths" value="vendor/slevomat/coding-standard,vendor/rask/coding-standard"/>
+
+    <rule ref="Generic.PHP.Syntax" />
+
+    <rule ref="PSR1" />
+
+    <rule ref="PSR2">
+        <!-- The following exclude is in place to make some multiline function declarations saner. -->
+        <exclude name="PSR2.ControlStructures.ControlStructureSpacing.SpacingAfterOpenBrace" />
+    </rule>
+
+    <rule ref="PSR12">
+        <!-- The following excludes are in place as PSR-12 was not properly defined earlier. -->
+        <exclude name="PSR12.Files.OpenTag.NotAlone" />
+        <exclude name="PSR12.Files.FileHeader.SpacingAfterBlock" />
+        <exclude name="PSR12.Files.FileHeader.IncorrectOrder" />
+        <exclude name="PSR12.Files.DeclareStatement" />
+        <exclude name="PSR12.Functions.ReturnTypeDeclaration.SpaceBeforeColon" />
+    </rule>
+
+    <rule ref="PSR1.Methods.CamelCapsMethodName">
+        <!-- `it_can_look_like_this_in_test_methods()`. -->
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+
+    <rule ref="Generic.Files.EndFileNewline" />
+
+    <!-- Use 100 instead of old-fashioned 80. -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="absoluteLineLimit" value="120"/>
+        </properties>
+    </rule>
+
+    <rule ref="Generic.VersionControl.GitMergeConflict" />
+
+    <rule ref="Generic.Commenting.DocComment">
+        <exclude name="Generic.Commenting.DocComment.ParamNotFirst" />
+        <exclude name="Generic.Commenting.DocComment.TagValueIndent" />
+        <exclude name="Generic.Commenting.DocComment.ContentAfterOpen" />
+        <exclude name="Generic.Commenting.DocComment.ContentBeforeClose" />
+        <exclude name="Generic.Commenting.DocComment.MissingShort" />
+
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+
+    <rule ref="Squiz.Commenting.FunctionComment">
+        <!-- PHP7 can comment itself better here in most cases. -->
+        <exclude name="Squiz.Commenting.FunctionComment.InvalidReturn" />
+        <exclude name="Squiz.Commenting.FunctionComment.MissingReturn" />
+        <exclude name="Squiz.Commenting.FunctionComment.MissingParamTag" />
+
+        <!-- Sometimes useless, e.g. `int` is okay and this tries to force `integer`. -->
+        <exclude name="Squiz.Commenting.FunctionComment.IncorrectParamVarName" />
+
+        <!-- No alignment. -->
+        <exclude name="Squiz.Commenting.FunctionComment.SpacingAfterParamType" />
+        <exclude name="Squiz.Commenting.FunctionComment.SpacingAfterParamName" />
+
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+
+    <!-- Force strict types. -->
+    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes">
+        <properties>
+            <property name="newlinesCountBetweenOpenTagAndDeclare" value="0" />
+            <property name="newlinesCountAfterDeclare" value="2" />
+            <property name="spacesCountAroundEqualsSign" value="1" />
+        </properties>
+    </rule>
+
+    <!-- Make docblock typing redundant if declaration itself uses types. -->
+    <rule ref="SlevomatCodingStandard.TypeHints.TypeHintDeclaration">
+        <properties>
+            <property name="enableEachParameterAndReturnInspection" value="true" />
+            <property name="allAnnotationsAreUseful" value="true" />
+        </properties>
+    </rule>
+
+    <!-- Use `===` instead of `==`. -->
+    <rule ref="SlevomatCodingStandard.Operators.DisallowEqualOperators" />
+
+    <!-- Use `\global_function()` instead of `global_function()`. -->
+    <rule ref="SlevomatCodingStandard.PHP.OptimizedFunctionsWithoutUnpacking" />
+
+    <!-- Use `array<int>` instead of `int[]`. -->
+    <rule ref="SlevomatCodingStandard.TypeHints.DisallowArrayTypeHintSyntax" />
+
+    <!-- `[...] = foo()` instead of `list(...) = foo()`. -->
+    <rule ref="SlevomatCodingStandard.PHP.ShortList" />
+
+    <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
+        <properties>
+            <property name="searchAnnotations" value="true" />
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Namespaces.UseDoesNotStartWithBackslash" />
+    <rule ref="SlevomatCodingStandard.Namespaces.FullyQualifiedGlobalFunctions" />
+    <rule ref="SlevomatCodingStandard.ControlStructures.DisallowYodaComparison" />
+    <rule ref="SlevomatCodingStandard.Arrays.TrailingArrayComma" />
+    <rule ref="SlevomatCodingStandard.TypeHints.ReturnTypeHintSpacing">
+        <properties>
+            <property name="spacesCountBeforeColon" value="1" />
+        </properties>
+    </rule>
+    <rule ref="SlevomatCodingStandard.Commenting.DocCommentSpacing">
+        <properties>
+            <property name="linesCountBetweenAnnotationsGroups" value="1" />
+            <property name="linesCountBetweenDescriptionAndAnnotations" value="1" />
+            <property name="linesCountBeforeFirstContent" value="0" />
+            <property name="linesCountAfterLastContent" value="0" />
+            <property name="annotationsGroups" type="array">
+                <element value="
+                    @phpcsSuppress,
+                    @internal,
+                    @deprecated,
+                    @todo,
+                    @fixme,
+                    @see,
+                    @link,
+                    @var
+                " />
+                <element value="
+                    @throws
+                " />
+                <element value="
+                    @param
+                " />
+                <element value="
+                    @return
+                " />
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="RaskCodingStandard" />
+</ruleset>

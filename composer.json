@@ -1,0 +1,62 @@
+{
+    "name": "rask/libload",
+    "type": "library",
+    "description": "A small FFI library loader tool",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Otto Rask",
+            "email": "ojrask@gmail.com"
+        }
+    ],
+
+    "autoload": {
+        "psr-4": {
+            "rask\\Libload\\": "src/"
+        }
+    },
+
+    "autoload-dev": {
+        "psr-4": {
+            "rask\\Libload\\Tests\\": "tests/"
+        }
+    },
+
+    "require": {
+        "php": ">=7.4",
+        "roave/security-advisories": "dev-master"
+    },
+
+    "require-dev": {
+        "ext-xdebug": "*",
+        "roave/security-advisories": "dev-master",
+        "phpunit/phpunit": "^8.0",
+        "phpstan/phpstan": "^0.12",
+        "phpstan/phpstan-strict-rules": "^0.12",
+        "ergebnis/phpstan-rules": "^0.14",
+        "infection/infection": "^0.13",
+        "squizlabs/php_codesniffer": "^3.5",
+        "slevomat/coding-standard": "^5.0",
+        "brainmaestro/composer-git-hooks": "^2.8",
+        "rask/coding-standard": "^0.1"
+    },
+
+    "scripts": {
+        "post-install-cmd": "cghooks add --ignore-lock",
+        "post-update-cmd": "cghooks update",
+        "test": ["make -C ./tests/lib build", "./vendor/bin/phpunit"],
+        "stan": "./vendor/bin/phpstan analyze -l max ./src",
+        "lint": ["./vendor/bin/phpcs ."],
+        "fix": "./vendor/bin/phpcbf .",
+        "infection": "./vendor/bin/infection",
+        "clean": "make -C ./tests/lib clean"
+    },
+
+    "extra": {
+        "hooks": {
+            "pre-commit": [
+                "composer lint"
+            ]
+        }
+    }
+}

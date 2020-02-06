@@ -1,0 +1,19 @@
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+    paths:
+        - .
+    excludes_analyse:
+        - %rootDir%/../../../vendor/*
+    level: max
+
+services:
+    -
+        class: Ergebnis\PHPStan\Rules\Classes\FinalRule
+        arguments:
+            allowAbstractClasses: true
+            classesNotRequiredToBeAbstractOrFinal:
+                - PHPUnit\Framework\TestCase
+        tags:
+            - phpstan.rules.rule

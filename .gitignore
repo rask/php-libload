@@ -1,0 +1,4 @@
+vendor/
+tests/reports/
+tests/lib/testlib.so
+.phpunit.result.cache

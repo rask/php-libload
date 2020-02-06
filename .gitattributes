@@ -1,0 +1,9 @@
+/tests export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/phpunit.xml export-ignore
+/infection.json.dist export-ignore
+/phpcs.xml export-ignore
+/phpstan.neon export-ignore
+/.editorconfig export-ignore
+/Makefile export-ignore
