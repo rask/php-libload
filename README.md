@@ -1,5 +1,7 @@
 # rask/libload
 
+[![Infection MSI](https://badge.stryker-mutator.io/github.com/rask/php-libload/master)](https://infection.github.io)
+
 A small library to help in loading FFI libraries in a straight-forward manner.
 
 ## Rationale
