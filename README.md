@@ -97,7 +97,7 @@ We need `gcc` and `make` so we can build a shared library for testing purposes w
 Before sending code as a pull request:
 
 -   Try to add tests for your changes (`composer test`), or ask for help from the maintainers with it
--   Run linting and sttatic analysis against your code before commiting (`composer lint` and `composer stan`)
+-   Run linting and static analysis against your code before commiting (`composer lint` and `composer stan`)
 
 If you have problems using the package, you can raise issues. Documentation and cleanup contributions very welcome. Feature requests are OK as long as they're not too far from the core purpose of this package: making loading FFI libraries a little simpler/easier/saner/etc.
 

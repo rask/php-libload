@@ -18,9 +18,11 @@ jobs:
 
     - name: Run linting
       run: composer lint
-      
+
     - name: Run static analysis
       run: composer stan
-      
+
     - name: Run test suite
+      env: # Or as an environment variable
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
       run: composer test
