@@ -1,6 +1,6 @@
 # rask/libload
 
-A small library to help in loading FFI libraries in a straight forward manner.
+A small library to help in loading FFI libraries in a straight-forward manner.
 
 ## Rationale
 
@@ -25,9 +25,8 @@ So, the only real reason this library exists is to bypass these limitations, and
 ## Features
 
 -   Load libraries the `dlopen(3)` way
--   Load libraries according to certain ways of `dlopen(3)` (e.g. allow `LD_LIBRARY_PATH` but disallow others)
--   Disable loading libraries using the `dlopen(3)` logic
--   Load libraries from specific paths, e.g. relative to the current PHP file or similar.
+-   Load libraries relative to the header file
+-   Load libraries relative to a custom path
 
 ## Example
 
@@ -35,15 +34,14 @@ So, the only real reason this library exists is to bypass these limitations, and
 <?php
 
 use rask\Libload\Loader;
+use rask\Libload\LoaderException;
+use rask\Libload\Parsing\ParseException;
 
 $loader = new Loader();
 
-$loader->disableDlopenLogic();
-$loader->addLibraryPath('/var/app/path/to/libs');
-
 try {
-    $ffi = $loader->load(__DIR__ . '/libs/my_lib.h');
-} catch (\rask\Libload\LibloadException $e) {
+    $ffi = $loader->relativeTo('/path/to/libs')->load(__DIR__ . '/libs/my_lib.h');
+} catch (LoaderException | ParseException $e) {
     // log it or something
 }
 
@@ -58,9 +56,9 @@ Where `my_lib.h` contains
 ... definitions here ...
 ```
 
-The example above instantiates a new `Loader`, and on that loader we disable the default logic of PHP and `dlopen(3)`. Then we pass in a library path (directory) where the loader should look for dynamic libraries in. Our header file `my_lib.h` contains an `FFI_LIB` definition that is not of the path type, and it will be used as a relative path once we disable the `dlopen(3)` default logic.
+The example above instantiates a new `Loader`, and then we instruct it to load a header file with the relative lookup mode.
 
-So, if a dynamic library exists in `/var/app/path/to/libs/my_lib.so` it should get loaded and return a regular PHP `\FFI` instance for us.
+So, if a dynamic library exists in `/path/to/libs/my_lib.so` it should get loaded and return a regular PHP `\FFI` instance for us.
 
 ## How it works
 
@@ -76,19 +74,23 @@ A little hacky, yes.
 
 ## Usage
 
-> to be written
+>   To be written.
 
 ## Todo
 
+-   More ways to load libraries?
+-   Make it work with headers that provide `FFI_SCOPE` (i.e. make it work with preloading)
 -   Make this package useless, by pestering PHP core devs to add this functionality to the PHP core FFI implementation
 
 ## Notes
 
-Currently FFI library loading in opcache preloading contexts is limited to a `php.ini` setting called `ffi.preload`, meaning all bindings you want to have available during preloading must be defined there. This package does not change that, and currently this package targets CLI projects mainly.
+This package might be useless if you do not intend to write FFI code that is to be distributed as a package or something. Also this might be overkill if you can load your FFI instances using pure `\FFI::cdef()` instead.
+
+Currently FFI library loading in opcache preloading contexts is confusingly documented, so this package waits for confirmations on how to actually preload FFI libraries in production before making commitments towards preloading-compatibility. Use this for CLI apps for now.
 
 ## Contributing
 
-Development requirements apart from a PHP CLI installation that supports FFI, you need to have `gcc` and `make` available, and being able to compile on a system that produces Linux shared object binaries (`*.so`). This means you probably cannot run tests on Windows or Mac right now.
+Development requirements apart from a PHP CLI installation that supports FFI, you need to have `gcc` and `make` available, and being able to compile on a system that produces Linux shared object binaries (`*.so`). This means you probably cannot run tests on Windows or Mac right now. Some tests require you to have `/lib/x86_64-linux-gnu/libc.so.6` available in your system.
 
 We need `gcc` and `make` so we can build a shared library for testing purposes when running PHPUnit.
 

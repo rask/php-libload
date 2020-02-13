@@ -24,32 +24,35 @@
 
     "require": {
         "php": ">=7.4",
+        "ext-ffi": "*",
         "roave/security-advisories": "dev-master"
     },
 
     "require-dev": {
         "ext-xdebug": "*",
         "roave/security-advisories": "dev-master",
-        "phpunit/phpunit": "^8.0",
+        "phpunit/phpunit": "^9.0",
         "phpstan/phpstan": "^0.12",
         "phpstan/phpstan-strict-rules": "^0.12",
         "ergebnis/phpstan-rules": "^0.14",
-        "infection/infection": "^0.13",
+        "infection/infection": "^0.15",
         "squizlabs/php_codesniffer": "^3.5",
         "slevomat/coding-standard": "^5.0",
         "brainmaestro/composer-git-hooks": "^2.8",
-        "rask/coding-standard": "^0.1"
+        "rask/coding-standard": "^0.1",
+        "mikey179/vfsstream": "^1.6"
     },
 
     "scripts": {
         "post-install-cmd": "cghooks add --ignore-lock",
         "post-update-cmd": "cghooks update",
-        "test": ["make -C ./tests/lib build", "./vendor/bin/phpunit"],
+        "test": ["composer infection"],
         "stan": "./vendor/bin/phpstan analyze -l max ./src",
         "lint": ["./vendor/bin/phpcs ."],
         "fix": "./vendor/bin/phpcbf .",
-        "infection": "./vendor/bin/infection",
-        "clean": "make -C ./tests/lib clean"
+        "infection": ["make -C ./tests/lib build --quiet", "./vendor/bin/infection --no-progress"],
+        "clean": "make -C ./tests/lib clean",
+        "_test": ["make -C ./tests/lib build --quiet", "./vendor/bin/phpunit"]
     },
 
     "extra": {

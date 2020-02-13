@@ -1,4 +1,4 @@
 vendor/
 tests/reports/
-tests/lib/testlib.so
+tests/**/*.so
 .phpunit.result.cache

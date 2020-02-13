@@ -9,6 +9,12 @@
         "text": "tests/reports/infection.log"
     },
     "mutators": {
-        "@default": true
+        "@default": true,
+        "ProtectedVisibility": false,
+        "FalseValue": {
+            "ignore": [
+                "rask\\Libload\\Header::__construct::41"
+            ]
+        }
     }
 }

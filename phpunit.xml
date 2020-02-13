@@ -11,6 +11,10 @@
         </testsuite>
     </testsuites>
 
+    <php>
+        <env name="LD_LIBRARY_PATH" value="./tests/lib/dlpath" />
+    </php>
+
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="true">
             <directory suffix=".php">./src</directory>
