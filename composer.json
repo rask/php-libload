@@ -50,7 +50,7 @@
         "stan": "./vendor/bin/phpstan analyze -l max ./src",
         "lint": ["./vendor/bin/phpcs ."],
         "fix": "./vendor/bin/phpcbf .",
-        "infection": ["make -C ./tests/lib build --quiet", "./vendor/bin/infection --no-progress --min-msi=95"],
+        "infection": ["make -C ./tests/lib build --quiet", "./vendor/bin/infection --no-progress --min-msi=90"],
         "clean": "make -C ./tests/lib clean",
         "_test": ["make -C ./tests/lib build --quiet", "./vendor/bin/phpunit"]
     },

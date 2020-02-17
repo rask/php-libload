@@ -23,6 +23,11 @@ final class Loader
     protected const MODE_REL_CUSTOM_PATH = 4;
 
     /**
+     * Mode for loading libraries using recursive directory search.
+     */
+    protected const MODE_DIR_SEARCH = 8;
+
+    /**
      * Loading mode.
      */
     protected int $mode = self::MODE_DEFAULT;
@@ -33,6 +38,11 @@ final class Loader
     protected ?string $load_root = null;
 
     /**
+     * Should the instance automatically reset after each call to self::load()?
+     */
+    protected bool $auto_reset = false;
+
+    /**
      * Load FFI instance as defined in bindings.
      *
      * @throws LoaderException If loading fails.
@@ -41,20 +51,102 @@ final class Loader
     {
         $header = new Header($header_path);
 
+        if ($header->getFfiLib() === null) {
+            throw new LoaderException('No FFI_LIB defined in header `' . $header_path . '`');
+        }
+
+        /** @var ?\FFI $ffi */
+        $ffi = null;
+
         switch ($this->mode) {
+            case self::MODE_DIR_SEARCH:
+                if ($this->load_root === null) {
+                    $this->maybeAutoReset();
+
+                    throw new LoaderException('Cannot load without directory search root set');
+                }
+
+                $ffi = $this->loadBySearchingDirectory($header, $this->load_root);
+
+                break;
             case self::MODE_REL_CUSTOM_PATH:
                 if ($this->load_root === null) {
+                    $this->maybeAutoReset();
+
                     throw new LoaderException('Cannot load without relative load path set');
                 }
 
-                return $this->loadRelativeToPath($header, $this->load_root);
+                $ffi = $this->loadRelativeToPath($header, $this->load_root);
+
+                break;
             case self::MODE_REL_HEADER_FILE:
-                return $this->loadRelativeToHeaderFile($header);
+                $ffi = $this->loadRelativeToHeaderFile($header);
+
+                break;
             case self::MODE_DEFAULT:
-                return \FFI::load($header_path);
+                $ffi = \FFI::load($header_path);
+
+                break;
             default:
+                $this->maybeAutoReset();
+
                 throw new LoaderException('Cannot load library with invalid mode');
         }
+
+        $this->maybeAutoReset();
+
+        return $ffi;
+    }
+
+    /**
+     * Do automatic reset if applicable.
+     */
+    protected function maybeAutoReset() : void
+    {
+        if ($this->auto_reset === false) {
+            return;
+        }
+
+        $this->reset();
+    }
+
+    /**
+     * Reset the loader configuration to defaults.
+     */
+    public function reset() : self
+    {
+        $this->mode = self::MODE_DEFAULT;
+        $this->load_root = null;
+
+        return $this;
+    }
+
+    /**
+     * Enable resetting automatically after calls to self::load().
+     */
+    public function enableAutoReset() : self
+    {
+        $this->auto_reset = true;
+
+        return $this;
+    }
+
+    /**
+     * Disable resetting automatically after calls to self::load().
+     */
+    public function disableAutoReset() : self
+    {
+        $this->auto_reset = false;
+
+        return $this;
+    }
+
+    /**
+     * Is this instance set to auto reset?
+     */
+    public function isAutoResetting() : bool
+    {
+        return $this->auto_reset;
     }
 
     /**
@@ -89,6 +181,23 @@ final class Loader
     }
 
     /**
+     * Set load mode to search inside a directory tree.
+     *
+     * @throws LoaderException If path is invalid.
+     */
+    public function fromDirectory(string $directory) : self
+    {
+        if (\is_dir($directory) === false) {
+            throw new LoaderException('No directory found at `' . $directory . '`');
+        }
+
+        $this->mode = self::MODE_DIR_SEARCH;
+        $this->load_root = $directory;
+
+        return $this;
+    }
+
+    /**
      * Do actual loading with header and library file path.
      *
      * @throws LoaderException If library is missing or unreadable.
@@ -112,12 +221,10 @@ final class Loader
     {
         $lib_path = $header->getFfiLib();
 
-        if ($lib_path === null) {
-            throw new LoaderException('No FFI_LIB defined in header');
-        }
+        \assert($lib_path !== null);
 
         if (\strpos($lib_path, '/') === 0) {
-            throw new LoaderException('Cannot load absolute path using relative mode');
+            throw new LoaderException('Cannot load absolute path FFI_LIB when using relative mode');
         }
 
         $root_path = \dirname($header->getPath());
@@ -136,16 +243,61 @@ final class Loader
     {
         $lib_path = $header->getFfiLib();
 
-        if ($lib_path === null) {
-            throw new LoaderException('No FFI_LIB defined in header');
-        }
+        \assert($lib_path !== null);
 
         if (\strpos($lib_path, '/') === 0) {
-            throw new LoaderException('Cannot load absolute path using relative mode');
+            throw new LoaderException('Cannot load absolute path FFI_LIB when using relative mode');
         }
 
         $actual_path = $relative_to . '/' . $lib_path;
 
         return $this->doLoad($header, $actual_path);
+    }
+
+    /**
+     * Load library relative to a user supplied path.
+     *
+     * @throws LoaderException If loading fails.
+     */
+    protected function loadBySearchingDirectory(Header $header, string $directory) : \FFI
+    {
+        $lib_path = $header->getFfiLib();
+
+        \assert($lib_path !== null);
+
+        if (\strpos($lib_path, DIRECTORY_SEPARATOR) !== false) {
+            throw new LoaderException(
+                'Cannot use relative or absolute path for FFI_LIB when loading using directory search'
+            );
+        }
+
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(
+            $directory,
+            \RecursiveDirectoryIterator::CURRENT_AS_FILEINFO
+        ));
+
+        /** @var ?string $found_lib_path */
+        $found_lib_path = null;
+
+        /** @var \SplFileInfo $path */
+        foreach ($iterator as $path) {
+            if ($path->isDir()) {
+                continue;
+            }
+
+            $basename = $path->getBasename();
+
+            if ($basename === $lib_path) {
+                $found_lib_path = $path->getPathname();
+
+                break;
+            }
+        }
+
+        if ($found_lib_path === null) {
+            throw new LoaderException(\sprintf('Library `%s` not found inside directory `%s`', $lib_path, $directory));
+        }
+
+        return $this->doLoad($header, $found_lib_path);
     }
 }

@@ -155,4 +155,201 @@ class LoaderTest extends TestCase
 
         $ffi = $loader->relativeToHeader()->load(__DIR__ . '/lib/testlib_10.h');
     }
+
+    public function test_it_loads_libraries_with_directory_search() : void
+    {
+        $loader = new Loader();
+
+        $ffi = $loader->fromDirectory(__DIR__ . '/lib/dylib/some')->load(__DIR__ . '/lib/testlib_1.h');
+
+        $this->assertInstanceOf(\FFI::class, $ffi);
+
+        $this->assertSame(42, $ffi->foo(), 'Wrong lib loaded with wrong implementation');
+    }
+
+    public function test_it_loads_libraries_with_directory_search_but_fails_if_not_found() : void
+    {
+        $loader = new Loader();
+
+        $this->expectException(LoaderException::class);
+        $this->expectExceptionMessageMatches('/not found inside directory/');
+
+        $ffi = $loader->fromDirectory(__DIR__ . '/lib/dylib/some')->load(__DIR__ . '/lib/testlib_0.h');
+    }
+
+    public function test_it_dir_search_fails_with_invalid_directory() : void
+    {
+        $loader = new Loader();
+
+        $this->expectException(LoaderException::class);
+        $this->expectExceptionMessageMatches('/No directory found/');
+
+        $ffi = $loader->fromDirectory('/i/hope/this/one/does/not/exist/either')->load(__DIR__ . '/lib/testlib_0.h');
+    }
+
+    public function test_it_dir_search_fails_with_pathlike_ffilib() : void
+    {
+        $loader = new Loader();
+
+        $this->expectException(LoaderException::class);
+        $this->expectExceptionMessageMatches('/Cannot use relative or absolute/');
+
+        $ffi = $loader->fromDirectory(__DIR__ . '/lib/dylib/some')->load(__DIR__ . '/lib/testlib_8.h');
+    }
+
+    public function test_dir_search_fails_without_custom_path_being_set() : void
+    {
+        $loader_refl = new \ReflectionClass(Loader::class);
+
+        $mode_prop = $loader_refl->getProperty('mode');
+        $path_prop = $loader_refl->getProperty('load_root');
+        $mode_prop->setAccessible(true);
+        $path_prop->setAccessible(true);
+
+        $inst = $loader_refl->newInstance();
+        $mode_prop->setValue($inst, 8);
+        $path_prop->setValue($inst, null);
+
+        $this->expectException(LoaderException::class);
+        $this->expectExceptionMessageMatches('/Cannot load without/');
+
+        $inst->load(__DIR__ . '/lib/testlib_1.h');
+    }
+
+    public function test_it_can_be_reset() : void
+    {
+        $loader = new Loader();
+
+        $ffi = $loader->relativeTo(__DIR__ . '/lib')->load(__DIR__ . '/lib/testlib_3.h');
+
+        $this->assertInstanceOf(\FFI::class, $ffi);
+
+        $loader->reset();
+
+        $this->expectException(\FFI\Exception::class);
+
+        $ffi = $loader->load(__DIR__ . '/lib/testlib_3.h');
+    }
+
+    public function test_it_can_use_auto_reset() : void
+    {
+        $loader = new Loader();
+        $loader->enableAutoReset();
+
+        $ffi = $loader->relativeTo(__DIR__ . '/lib')->load(__DIR__ . '/lib/testlib_3.h');
+
+        $this->assertInstanceOf(\FFI::class, $ffi);
+
+        $this->expectException(\FFI\Exception::class);
+
+        $ffi = $loader->load(__DIR__ . '/lib/testlib_3.h');
+    }
+
+    public function test_it_can_disable_auto_reset() : void
+    {
+        $loader = new Loader();
+        $loader->enableAutoReset();
+
+        $ffi = $loader->relativeTo(__DIR__ . '/lib')->load(__DIR__ . '/lib/testlib_3.h');
+
+        $this->assertInstanceOf(\FFI::class, $ffi);
+
+        $loader->disableAutoReset();
+
+        $ffi = $loader->relativeTo(__DIR__ . '/lib')->load(__DIR__ . '/lib/testlib_3.h');
+
+        $this->assertInstanceOf(\FFI::class, $ffi);
+
+        $ffi = $loader->load(__DIR__ . '/lib/testlib_3.h');
+
+        $this->assertInstanceOf(\FFI::class, $ffi);
+    }
+
+    public function test_it_tells_if_it_is_auto_resetting() : void
+    {
+        $loader = new Loader();
+
+        $this->assertFalse($loader->isAutoResetting());
+
+        $loader->enableAutoReset();
+
+        $this->assertTrue($loader->isAutoResetting());
+    }
+
+    public function test_autoresetting_fires_in_case_of_load_errors_as_well() : void
+    {
+        $loader_refl = new \ReflectionClass(Loader::class);
+
+        $mode_prop = $loader_refl->getProperty('mode');
+        $path_prop = $loader_refl->getProperty('load_root');
+        $mode_prop->setAccessible(true);
+        $path_prop->setAccessible(true);
+
+        $inst1 = $loader_refl->newInstance();
+        $inst1->enableAutoReset();
+        $mode_prop->setValue($inst1, 4);
+        $path_prop->setValue($inst1, null);
+
+        $inst2 = $loader_refl->newInstance();
+        $inst2->enableAutoReset();
+        $mode_prop->setValue($inst2, 8);
+        $path_prop->setValue($inst2, null);
+
+        $inst3 = $loader_refl->newInstance();
+        $inst3->enableAutoReset();
+        $mode_prop->setValue($inst3, 1337);
+
+        $inst4 = $loader_refl->newInstance();
+        $inst4->disableAutoReset();
+        $mode_prop->setValue($inst4, 1337);
+
+        try {
+            $_ = $inst1->load(__DIR__ . '/lib/testlib_7.h');
+        } catch (LoaderException $e) {
+            $this->assertStringContainsString('Cannot load without', $e->getMessage());
+        }
+
+        $this->assertTrue($inst1->isAutoResetting());
+
+        $ffi1 = $inst1->load(__DIR__ . '/lib/testlib_7.h');
+
+        $this->assertInstanceOf(\FFI::class, $ffi1);
+
+        try {
+            $_ = $inst2->load(__DIR__ . '/lib/testlib_7.h');
+        } catch (LoaderException $e) {
+            $this->assertStringContainsString('Cannot load without', $e->getMessage());
+        }
+
+        $this->assertTrue($inst2->isAutoResetting());
+
+        $ffi2 = $inst2->load(__DIR__ . '/lib/testlib_7.h');
+
+        $this->assertInstanceOf(\FFI::class, $ffi2);
+
+        try {
+            $_ = $inst3->load(__DIR__ . '/lib/testlib_7.h');
+        } catch (LoaderException $e) {
+            $this->assertStringContainsString('invalid mode', $e->getMessage());
+        }
+
+        $this->assertTrue($inst3->isAutoResetting());
+
+        $ffi3 = $inst3->load(__DIR__ . '/lib/testlib_7.h');
+
+        $this->assertInstanceOf(\FFI::class, $ffi3);
+
+        try {
+            $_ = $inst4->load(__DIR__ . '/lib/testlib_7.h');
+        } catch (LoaderException $e) {
+            $this->assertStringContainsString('invalid mode', $e->getMessage());
+        }
+
+        try {
+            $_ = $inst4->load(__DIR__ . '/lib/testlib_7.h');
+        } catch (LoaderException $e) {
+            // autoreset was disabled for this one, so we should meet the same error
+            $this->assertStringContainsString('invalid mode', $e->getMessage());
+        }
+    }
 }

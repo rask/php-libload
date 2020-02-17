@@ -29,6 +29,7 @@ So, the only real reason this library exists is to bypass these limitations, and
 -   Load libraries the `dlopen(3)` way
 -   Load libraries relative to the header file
 -   Load libraries relative to a custom path
+-   Load libraries by searching for them inside a directory tree
 
 ## Example
 
@@ -76,7 +77,176 @@ A little hacky, yes.
 
 ## Usage
 
->   To be written.
+### Using PHP default logic
+
+To use the default `\FFI::load()` logic (aka `dlopen(3)` logic), you can use the loader as follows:
+
+```php
+<?php
+
+// ... setup autoloads etc ...
+
+$loader = new \rask\Libload\Loader();
+
+$ffi = $loader->load('./path/to/header.h');
+
+assert($ffi instanceof \FFI);
+```
+
+### Loading a library relative to header
+
+If your header file defines an `FFI_LIB` that is located relative to the header file itself, you can use
+
+```php
+<?php
+
+// ... setup autoloads etc ...
+
+$loader = new \rask\Libload\Loader();
+
+$ffi = $loader->relativeToHeader()->load('./path/to/header.h');
+
+assert($ffi instanceof \FFI);
+```
+
+You header file might contain
+
+```h
+#define FFI_LIB "./subdir/lib.so"
+```
+
+So `$loader` would look for the library in `./path/to/header/subdir/lib.so`.
+
+Using this method fails if the `FFI_LIB` definition contains an absolute path.
+
+This method disables the default `dlopen(3)` logic.
+
+### Loading a library relative to a custom path
+
+If your library is located in a specific directory, you can load it using
+
+```php
+<?php
+
+// ... setup autoloads etc ...
+
+$loader = new \rask\Libload\Loader();
+
+$ffi = $loader->relativeTo('/my/awesome/libs')->load('./path/to/header.h');
+
+assert($ffi instanceof \FFI);
+```
+
+You header file might contain
+
+```h
+#define FFI_LIB "./subdir/lib.so"
+```
+
+So `$loader` would look for the library in `/my/awesome/libs/subdir/lib.so`.
+
+Using this method fails if the `FFI_LIB` definition contains an absolute path.
+
+This method disables the default `dlopen(3)` logic.
+
+### Loading a library by searching inside a directory
+
+If you have a directory tree with an arbritary structure but know the name of the library, you can search for it using
+
+```php
+<?php
+
+// ... setup autoloads etc ...
+
+$loader = new \rask\Libload\Loader();
+
+$ffi = $loader->fromDirectory('/my/awesome/libs')->load('./path/to/header.h');
+
+assert($ffi instanceof \FFI);
+```
+
+And if your directory tree is as follows
+
+```txt
+/
+    my/
+        awesome/
+            libs/
+                subdir1/
+                    subdir2/
+                        lib5.so
+                    lib3.so
+                    lib4.so
+                lib1.so
+                lib2.so
+```
+
+And if your header defines
+
+```h
+#define FFI_LIB "lib4.so"
+```
+
+Then `$loader` will find `/my/awesome/libs/subdir1/lib4.so`. The search will be slower in larger directories.
+
+This method disables the default `dlopen(3)` logic.
+
+### Multiple library loading and resetting the loader
+
+If you want to use the same loader instance for all kinds of loading needs across your application, you may need to reset it depending on how you want to load various libraries.
+
+You can use resetting as such:
+
+```php
+<?php
+
+// ... setup autoloads etc ...
+
+$loader = new \rask\Libload\Loader();
+
+// Load using default logic
+$ffi1 = $loader->load('mylib1.h');
+
+// Load using relative to header
+$ffi2 = $loader->reset()->relativeToHeader()->load('mylib2.h');
+
+// Search a directory for the last one
+$ffi3 = $loader->reset()->fromDirectory('/my/directory/path')->load('mylib3.h');
+```
+
+If you have loads of variance in loading types, you can configure the instance to reset after each load:
+
+```php
+<?php
+
+$loader = new \rask\Libload\Loader();
+
+$loader->enableAutoReset();
+
+assert($loader->isAutoResetting() === true);
+
+// Now the instance will reset after each call to `load()`
+
+$loader->disableAutoReset();
+
+assert($loader->isAutoResetting() === false);
+
+// Returned to normal manual operation for resetting
+```
+
+If you don't use resetting, you can keep using the same loading method for multiple libraries:
+
+```php
+<?php
+
+$loader = new \rask\Libload\Loader();
+
+$loader = $loader->relativeTo('/my/libs');
+
+$ffi1 = $loader->load('lib1.h');
+$ffi2 = $loader->load('lib2.h');
+$ffi3 = $loader->load('lib3.h');
+```
 
 ## Todo
 
