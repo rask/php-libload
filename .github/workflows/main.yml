@@ -3,7 +3,7 @@ name: PHP Composer
 on: [push]
 
 jobs:
-  build:
+  build-and-test:
 
     runs-on: ubuntu-latest
 
@@ -21,6 +21,17 @@ jobs:
     - name: Validate composer.json and composer.lock
       run: composer validate
 
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      uses: actions/cache@v1
+      with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest --no-interaction
 
@@ -28,10 +39,10 @@ jobs:
       run: composer lint
 
     - name: Run static analysis
-      run: composer stan
+      run: composer stan -- --no-progress
 
     - name: Run test suite
-      env: # Or as an environment variable
+      env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
       run: composer test
 
