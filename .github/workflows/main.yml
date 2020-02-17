@@ -26,3 +26,8 @@ jobs:
       env: # Or as an environment variable
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
       run: composer test
+
+    - uses: actions/upload-artifact@v1
+      with:
+          name: infection.log
+          path: tests/reports/infection.log
